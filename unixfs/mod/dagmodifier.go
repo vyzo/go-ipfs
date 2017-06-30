@@ -145,30 +145,28 @@ func (dm *DagModifier) Write(b []byte) (int, error) {
 	return n, nil
 }
 
-var ErrNoRawYet = fmt.Errorf("currently only fully support protonodes in the dagmodifier")
-
 // Size returns the Filesize of the node
 func (dm *DagModifier) Size() (int64, error) {
 	fileSize, err := fileSize(dm.curNode)
 	if err != nil {
 		return 0, err
 	}
-	if dm.wrBuf != nil && int64(dm.wrBuf.Len())+int64(dm.writeStart) > fileSize {
+	if dm.wrBuf != nil && int64(dm.wrBuf.Len())+int64(dm.writeStart) > int64(fileSize) {
 		return int64(dm.wrBuf.Len()) + int64(dm.writeStart), nil
 	}
-	return fileSize, nil
+	return int64(fileSize), nil
 }
 
-func fileSize(n node.Node) (int64, error) {
+func fileSize(n node.Node) (uint64, error) {
 	switch nd := n.(type) {
 	case *mdag.ProtoNode:
 		f, err := ft.FromBytes(nd.Data())
 		if err != nil {
 			return 0, err
 		}
-		return int64(f.GetFilesize()), nil
+		return f.GetFilesize(), nil
 	case *mdag.RawNode:
-		return int64(len(nd.RawData())), nil
+		return uint64(len(nd.RawData())), nil
 	default:
 		return 0, ErrNotUnixfs
 	}
@@ -224,43 +222,77 @@ func (dm *DagModifier) Sync() error {
 // returns the new key of the passed in node and whether or not all the data in the reader
 // has been consumed.
 func (dm *DagModifier) modifyDag(n node.Node, offset uint64, data io.Reader) (*cid.Cid, bool, error) {
+	// If we've reached a leaf node.
+	if len(n.Links()) == 0 {
+		switch nd0 := n.(type) {
+		case *mdag.ProtoNode:
+			f, err := ft.FromBytes(nd0.Data())
+			if err != nil {
+				return nil, false, err
+			}
+
+			n, err := data.Read(f.Data[offset:])
+			if err != nil && err != io.EOF {
+				return nil, false, err
+			}
+
+			// Update newly written node..
+			b, err := proto.Marshal(f)
+			if err != nil {
+				return nil, false, err
+			}
+
+			nd := new(mdag.ProtoNode)
+			nd.SetData(b)
+			k, err := dm.dagserv.Add(nd)
+			if err != nil {
+				return nil, false, err
+			}
+
+			// Hey look! we're done!
+			var done bool
+			if n < len(f.Data[offset:]) {
+				done = true
+			}
+
+			return k, done, nil
+		case *mdag.RawNode:
+			origData := nd0.RawData()
+			bytes := make([]byte, len(origData))
+			copy(bytes, origData[:offset])
+
+			n, err := data.Read(bytes[offset:])
+			if err != nil && err != io.EOF {
+				return nil, false, err
+			}
+
+			nd, err := mdag.NewRawNodeWPrefix(bytes, nd0.Cid().Prefix())
+			if err != nil {
+				return nil, false, err
+			}
+			k, err := dm.dagserv.Add(nd)
+			if err != nil {
+				return nil, false, err
+			}
+
+			// Hey look! we're done!
+			var done bool
+			if n < len(bytes[offset:]) {
+				done = true
+			}
+
+			return k, done, nil
+		}
+	}
+
 	node, ok := n.(*mdag.ProtoNode)
 	if !ok {
-		return nil, false, ErrNoRawYet
+		return nil, false, ErrNotUnixfs
 	}
 
 	f, err := ft.FromBytes(node.Data())
 	if err != nil {
 		return nil, false, err
-	}
-
-	// If we've reached a leaf node.
-	if len(node.Links()) == 0 {
-		n, err := data.Read(f.Data[offset:])
-		if err != nil && err != io.EOF {
-			return nil, false, err
-		}
-
-		// Update newly written node..
-		b, err := proto.Marshal(f)
-		if err != nil {
-			return nil, false, err
-		}
-
-		nd := new(mdag.ProtoNode)
-		nd.SetData(b)
-		k, err := dm.dagserv.Add(nd)
-		if err != nil {
-			return nil, false, err
-		}
-
-		// Hey look! we're done!
-		var done bool
-		if n < len(f.Data[offset:]) {
-			done = true
-		}
-
-		return k, done, nil
 	}
 
 	var cur uint64
@@ -463,26 +495,30 @@ func (dm *DagModifier) Truncate(size int64) error {
 }
 
 // dagTruncate truncates the given node to 'size' and returns the modified Node
-func dagTruncate(ctx context.Context, n node.Node, size uint64, ds mdag.DAGService) (*mdag.ProtoNode, error) {
-	nd, ok := n.(*mdag.ProtoNode)
-	if !ok {
-		return nil, ErrNoRawYet
+func dagTruncate(ctx context.Context, n node.Node, size uint64, ds mdag.DAGService) (node.Node, error) {
+	if len(n.Links()) == 0 {
+		switch nd := n.(type) {
+		case *mdag.ProtoNode:
+			// TODO: this can likely be done without marshaling and remarshaling
+			pbn, err := ft.FromBytes(nd.Data())
+			if err != nil {
+				return nil, err
+			}
+			nd.SetData(ft.WrapData(pbn.Data[:size]))
+			return nd, nil
+		case *mdag.RawNode:
+			return mdag.NewRawNodeWPrefix(nd.RawData()[:size], nd.Cid().Prefix())
+		}
 	}
 
-	if len(nd.Links()) == 0 {
-		// TODO: this can likely be done without marshaling and remarshaling
-		pbn, err := ft.FromBytes(nd.Data())
-		if err != nil {
-			return nil, err
-		}
-
-		nd.SetData(ft.WrapData(pbn.Data[:size]))
-		return nd, nil
+	nd, ok := n.(*mdag.ProtoNode)
+	if !ok {
+		return nil, ErrNotUnixfs
 	}
 
 	var cur uint64
 	end := 0
-	var modified *mdag.ProtoNode
+	var modified node.Node
 	ndata := new(ft.FSNode)
 	for i, lnk := range nd.Links() {
 		child, err := lnk.GetNode(ctx, ds)
