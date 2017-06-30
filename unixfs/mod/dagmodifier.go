@@ -149,22 +149,26 @@ var ErrNoRawYet = fmt.Errorf("currently only fully support protonodes in the dag
 
 // Size returns the Filesize of the node
 func (dm *DagModifier) Size() (int64, error) {
-	switch nd := dm.curNode.(type) {
+	fileSize, err := fileSize(dm.curNode)
+	if err != nil {
+		return 0, err
+	}
+	if dm.wrBuf != nil && int64(dm.wrBuf.Len())+int64(dm.writeStart) > fileSize {
+		return int64(dm.wrBuf.Len()) + int64(dm.writeStart), nil
+	}
+	return fileSize, nil
+}
+
+func fileSize(n node.Node) (int64, error) {
+	switch nd := n.(type) {
 	case *mdag.ProtoNode:
-		pbn, err := ft.FromBytes(nd.Data())
+		f, err := ft.FromBytes(nd.Data())
 		if err != nil {
 			return 0, err
 		}
-		if dm.wrBuf != nil && uint64(dm.wrBuf.Len())+dm.writeStart > pbn.GetFilesize() {
-			return int64(dm.wrBuf.Len()) + int64(dm.writeStart), nil
-		}
-		return int64(pbn.GetFilesize()), nil
+		return int64(f.GetFilesize()), nil
 	case *mdag.RawNode:
-		if dm.wrBuf != nil {
-			return 0, ErrNoRawYet
-		}
-		sz, err := nd.Size()
-		return int64(sz), err
+		return int64(len(nd.RawData())), nil
 	default:
 		return 0, ErrNotUnixfs
 	}
