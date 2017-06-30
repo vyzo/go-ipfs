@@ -23,9 +23,9 @@ import (
 	"github.com/ipfs/go-ipfs/repo/config"
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
 
-	"gx/ipfs/QmQt5ufesif3cKE19VP54VQReL1femmVE1T3yxDWFqEKRz/go-ipfs-cmds"
-	"gx/ipfs/QmQt5ufesif3cKE19VP54VQReL1femmVE1T3yxDWFqEKRz/go-ipfs-cmds/cli"
-	"gx/ipfs/QmQt5ufesif3cKE19VP54VQReL1femmVE1T3yxDWFqEKRz/go-ipfs-cmds/http"
+	"gx/ipfs/QmSQD19QRgjwSpPk3UYo6vFLGWJPbB1geccoxkeRfkbv53/go-ipfs-cmds"
+	"gx/ipfs/QmSQD19QRgjwSpPk3UYo6vFLGWJPbB1geccoxkeRfkbv53/go-ipfs-cmds/cli"
+	"gx/ipfs/QmSQD19QRgjwSpPk3UYo6vFLGWJPbB1geccoxkeRfkbv53/go-ipfs-cmds/http"
 	logging "gx/ipfs/QmSpJByNKFX1sCsHBEp3R73FL4NF6FnQTEGyNAXHm2GS52/go-log"
 	"gx/ipfs/QmT7xnHPBQcMbgpcDJ81opQZzU4LfLCFv5U1B6YERMRsDj/go-ipfs-cmdkit"
 	loggables "gx/ipfs/QmVesPmqbPp7xRGyY96tnBwzDtVV1nqv4SCVxo5zCqKyH8/go-libp2p-loggables"
