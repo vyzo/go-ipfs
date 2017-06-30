@@ -364,7 +364,7 @@ func callCommand(ctx context.Context, req cmds.Request, root *cmds.Command, cmd 
 		go func() {
 			err = cmds.Copy(re, res)
 			if err != nil {
-				re.SetError(err, cmdkit.ErrNormal)
+				re.SetError(err, cmdkit.ErrNormal|cmdkit.ErrFatal)
 			}
 		}()
 	} else {

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"reflect"
 	"strings"
 	"time"
 
@@ -44,34 +43,25 @@ trip latency information.
 	},
 	Marshalers: cmds.MarshalerMap{
 		cmds.Text: func(res cmds.Response) (io.Reader, error) {
-			outChan, ok := res.Output().(<-chan interface{})
+			v, err := unwrapOutput(res.Output())
+			if err != nil {
+				return nil, err
+			}
+
+			obj, ok := v.(*PingResult)
 			if !ok {
-				fmt.Println(reflect.TypeOf(res.Output()))
 				return nil, u.ErrCast()
 			}
 
-			marshal := func(v interface{}) (io.Reader, error) {
-				obj, ok := v.(*PingResult)
-				if !ok {
-					return nil, u.ErrCast()
-				}
-
-				buf := new(bytes.Buffer)
-				if len(obj.Text) > 0 {
-					buf = bytes.NewBufferString(obj.Text + "\n")
-				} else if obj.Success {
-					fmt.Fprintf(buf, "Pong received: time=%.2f ms\n", obj.Time.Seconds()*1000)
-				} else {
-					fmt.Fprintf(buf, "Pong failed\n")
-				}
-				return buf, nil
+			buf := new(bytes.Buffer)
+			if len(obj.Text) > 0 {
+				buf = bytes.NewBufferString(obj.Text + "\n")
+			} else if obj.Success {
+				fmt.Fprintf(buf, "Pong received: time=%.2f ms\n", obj.Time.Seconds()*1000)
+			} else {
+				fmt.Fprintf(buf, "Pong failed\n")
 			}
-
-			return &cmds.ChannelMarshaler{
-				Channel:   outChan,
-				Marshaler: marshal,
-				Res:       res,
-			}, nil
+			return buf, nil
 		},
 	},
 	Run: func(req cmds.Request, res cmds.Response) {

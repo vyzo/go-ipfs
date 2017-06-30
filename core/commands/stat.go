@@ -173,9 +173,9 @@ Example:
 	Type: metrics.Stats{},
 	Marshalers: cmds.MarshalerMap{
 		cmds.Text: func(res cmds.Response) (io.Reader, error) {
-			outCh, ok := res.Output().(<-chan interface{})
-			if !ok {
-				return nil, u.ErrCast()
+			v, err := unwrapOutput(res.Output())
+			if err != nil {
+				return nil, err
 			}
 
 			polling, _, err := res.Request().Option("poll").Bool()
@@ -183,36 +183,23 @@ Example:
 				return nil, err
 			}
 
-			first := true
-			marshal := func(v interface{}) (io.Reader, error) {
-				bs, ok := v.(*metrics.Stats)
-				if !ok {
-					return nil, u.ErrCast()
-				}
-				out := new(bytes.Buffer)
-				if !polling {
-					printStats(out, bs)
-				} else {
-					if first {
-						fmt.Fprintln(out, "Total Up    Total Down  Rate Up     Rate Down")
-						first = false
-					}
-					fmt.Fprint(out, "\r")
-					// In the worst case scenario, the humanized output is of form "xxx.x xB", which is 8 characters long
-					fmt.Fprintf(out, "%8s    ", humanize.Bytes(uint64(bs.TotalOut)))
-					fmt.Fprintf(out, "%8s    ", humanize.Bytes(uint64(bs.TotalIn)))
-					fmt.Fprintf(out, "%8s/s  ", humanize.Bytes(uint64(bs.RateOut)))
-					fmt.Fprintf(out, "%8s/s  ", humanize.Bytes(uint64(bs.RateIn)))
-				}
-				return out, nil
-
+			bs, ok := v.(*metrics.Stats)
+			if !ok {
+				return nil, u.ErrCast()
 			}
-
-			return &cmds.ChannelMarshaler{
-				Channel:   outCh,
-				Marshaler: marshal,
-				Res:       res,
-			}, nil
+			out := new(bytes.Buffer)
+			if !polling {
+				printStats(out, bs)
+			} else {
+				fmt.Fprintln(out, "Total Up    Total Down  Rate Up     Rate Down\n")
+				// In the worst case scenario, the humanized output is of form "xxx.x xB", which is 8 characters long
+				fmt.Fprintf(out, "%8s    ", humanize.Bytes(uint64(bs.TotalOut)))
+				fmt.Fprintf(out, "%8s    ", humanize.Bytes(uint64(bs.TotalIn)))
+				fmt.Fprintf(out, "%8s/s  ", humanize.Bytes(uint64(bs.RateOut)))
+				fmt.Fprintf(out, "%8s/s  ", humanize.Bytes(uint64(bs.RateIn)))
+				fmt.Fprint(out, "\r")
+			}
+			return out, nil
 		},
 	},
 }
