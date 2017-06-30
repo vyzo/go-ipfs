@@ -40,24 +40,30 @@ type DagModifier struct {
 	curWrOff   uint64
 	wrBuf      *bytes.Buffer
 
+	rawLeaves bool
+
 	read uio.DagReader
 }
 
 var ErrNotUnixfs = fmt.Errorf("dagmodifier only supports unixfs nodes (proto or raw)")
 
 func NewDagModifier(ctx context.Context, from node.Node, serv mdag.DAGService, spl chunk.SplitterGen) (*DagModifier, error) {
+	rawLeaves := false
 	switch from.(type) {
-	case *mdag.ProtoNode, *mdag.RawNode:
+	case *mdag.ProtoNode:
 		// ok
+	case *mdag.RawNode:
+		rawLeaves = true
 	default:
 		return nil, ErrNotUnixfs
 	}
 
 	return &DagModifier{
-		curNode:  from.Copy(),
-		dagserv:  serv,
-		splitter: spl,
-		ctx:      ctx,
+		curNode:   from.Copy(),
+		dagserv:   serv,
+		splitter:  spl,
+		ctx:       ctx,
+		rawLeaves: rawLeaves,
 	}, nil
 }
 
@@ -113,17 +119,7 @@ func (dm *DagModifier) expandSparse(size int64) error {
 		return err
 	}
 	_, err = dm.dagserv.Add(nnode)
-	if err != nil {
-		return err
-	}
-
-	pbnnode, ok := nnode.(*mdag.ProtoNode)
-	if !ok {
-		return mdag.ErrNotProtobuf
-	}
-
-	dm.curNode = pbnnode
-	return nil
+	return err
 }
 
 // Write continues writing to the dag at the current offset
@@ -196,36 +192,22 @@ func (dm *DagModifier) Sync() error {
 		return err
 	}
 
-	nd, err := dm.dagserv.Get(dm.ctx, thisc)
+	dm.curNode, err = dm.dagserv.Get(dm.ctx, thisc)
 	if err != nil {
 		return err
 	}
 
-	pbnd, ok := nd.(*mdag.ProtoNode)
-	if !ok {
-		return mdag.ErrNotProtobuf
-	}
-
-	dm.curNode = pbnd
-
 	// need to write past end of current dag
 	if !done {
-		nd, err := dm.appendData(dm.curNode, dm.splitter(dm.wrBuf))
+		dm.curNode, err = dm.appendData(dm.curNode, dm.splitter(dm.wrBuf))
 		if err != nil {
 			return err
 		}
 
-		_, err = dm.dagserv.Add(nd)
+		_, err = dm.dagserv.Add(dm.curNode)
 		if err != nil {
 			return err
 		}
-
-		pbnode, ok := nd.(*mdag.ProtoNode)
-		if !ok {
-			return mdag.ErrNotProtobuf
-		}
-
-		dm.curNode = pbnode
 	}
 
 	dm.writeStart += uint64(buflen)
@@ -323,14 +305,13 @@ func (dm *DagModifier) modifyDag(n node.Node, offset uint64, data io.Reader) (*c
 // appendData appends the blocks from the given chan to the end of this dag
 func (dm *DagModifier) appendData(nd node.Node, spl chunk.Splitter) (node.Node, error) {
 	switch nd := nd.(type) {
-	case *mdag.ProtoNode:
+	case *mdag.ProtoNode, *mdag.RawNode:
 		dbp := &help.DagBuilderParams{
-			Dagserv:  dm.dagserv,
-			Maxlinks: help.DefaultLinksPerBlock,
+			Dagserv:   dm.dagserv,
+			Maxlinks:  help.DefaultLinksPerBlock,
+			RawLeaves: dm.rawLeaves,
 		}
 		return trickle.TrickleAppend(dm.ctx, nd, dbp.New(spl))
-	case *mdag.RawNode:
-		return nil, fmt.Errorf("appending to raw node types not yet supported")
 	default:
 		return nil, ErrNotUnixfs
 	}
