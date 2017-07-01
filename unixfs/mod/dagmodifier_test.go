@@ -16,7 +16,7 @@ import (
 	u "gx/ipfs/QmWbjfz3u6HkAdPh34dgPchGbQjob6LXLhAeCGii2TX69n/go-ipfs-util"
 )
 
-func testModWrite(t *testing.T, beg, size uint64, orig []byte, dm *DagModifier) []byte {
+func testModWrite(t *testing.T, beg, size uint64, orig []byte, dm *DagModifier, rawLeaves testu.UseRawLeaves) []byte {
 	newdata := make([]byte, size)
 	r := u.NewTimeSeededRand()
 	r.Read(newdata)
@@ -40,7 +40,12 @@ func testModWrite(t *testing.T, beg, size uint64, orig []byte, dm *DagModifier) 
 		t.Fatal(err)
 	}
 
-	err = trickle.VerifyTrickleDagStructure(nd, dm.dagserv, h.DefaultLinksPerBlock, 4)
+	err = trickle.VerifyTrickleDagStructure(nd, trickle.VerifyParams{
+		Getter:      dm.dagserv,
+		Direct:      h.DefaultLinksPerBlock,
+		LayerRepeat: 4,
+		RawLeaves:   bool(rawLeaves),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +69,7 @@ func testModWrite(t *testing.T, beg, size uint64, orig []byte, dm *DagModifier) 
 
 func runBothSubtests(t *testing.T, tfunc func(*testing.T, testu.UseRawLeaves)) {
 	t.Run("leaves=ProtoBuf", func(t *testing.T) { tfunc(t, testu.ProtoBufLeaves) })
-	//t.Run("leaves=Raw",      func(t *testing.T) {tfunc(t, testu.RawLeaves)})
+	t.Run("leaves=Raw", func(t *testing.T) { tfunc(t, testu.RawLeaves) })
 }
 
 func TestDagModifierBasic(t *testing.T) {
@@ -86,26 +91,26 @@ func testDagModifierBasic(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	length := uint64(60)
 
 	t.Log("Testing mod within zero block")
-	b = testModWrite(t, beg, length, b, dagmod)
+	b = testModWrite(t, beg, length, b, dagmod, rawLeaves)
 
 	// Within bounds of existing file
 	beg = 1000
 	length = 4000
 	t.Log("Testing mod within bounds of existing multiblock file.")
-	b = testModWrite(t, beg, length, b, dagmod)
+	b = testModWrite(t, beg, length, b, dagmod, rawLeaves)
 
 	// Extend bounds
 	beg = 49500
 	length = 4000
 
 	t.Log("Testing mod that extends file.")
-	b = testModWrite(t, beg, length, b, dagmod)
+	b = testModWrite(t, beg, length, b, dagmod, rawLeaves)
 
 	// "Append"
 	beg = uint64(len(b))
 	length = 3000
 	t.Log("Testing pure append")
-	_ = testModWrite(t, beg, length, b, dagmod)
+	_ = testModWrite(t, beg, length, b, dagmod, rawLeaves)
 
 	// Verify reported length
 	node, err := dagmod.GetNode()

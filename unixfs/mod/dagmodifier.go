@@ -305,12 +305,7 @@ func (dm *DagModifier) modifyDag(n node.Node, offset uint64, data io.Reader) (*c
 				return nil, false, err
 			}
 
-			childpb, ok := child.(*mdag.ProtoNode)
-			if !ok {
-				return nil, false, mdag.ErrNotProtobuf
-			}
-
-			k, sdone, err := dm.modifyDag(childpb, offset-cur, data)
+			k, sdone, err := dm.modifyDag(child, offset-cur, data)
 			if err != nil {
 				return nil, false, err
 			}
@@ -526,19 +521,14 @@ func dagTruncate(ctx context.Context, n node.Node, size uint64, ds mdag.DAGServi
 			return nil, err
 		}
 
-		childpb, ok := child.(*mdag.ProtoNode)
-		if !ok {
-			return nil, err
-		}
-
-		childsize, err := ft.DataSize(childpb.Data())
+		childsize, err := fileSize(child)
 		if err != nil {
 			return nil, err
 		}
 
 		// found the child we want to cut
 		if size < cur+childsize {
-			nchild, err := dagTruncate(ctx, childpb, size-cur, ds)
+			nchild, err := dagTruncate(ctx, child, size-cur, ds)
 			if err != nil {
 				return nil, err
 			}
