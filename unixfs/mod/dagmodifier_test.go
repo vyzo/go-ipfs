@@ -62,9 +62,17 @@ func testModWrite(t *testing.T, beg, size uint64, orig []byte, dm *DagModifier) 
 	return orig
 }
 
+func runBothSubtests(t *testing.T, tfunc func(*testing.T, testu.UseRawLeaves)) {
+	t.Run("leaves=ProtoBuf", func(t *testing.T) { tfunc(t, testu.ProtoBufLeaves) })
+	//t.Run("leaves=Raw",      func(t *testing.T) {tfunc(t, testu.RawLeaves)})
+}
+
 func TestDagModifierBasic(t *testing.T) {
+	runBothSubtests(t, testDagModifierBasic)
+}
+func testDagModifierBasic(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
-	b, n := testu.GetRandomNode(t, dserv, 50000, testu.ProtoBufLeaves)
+	b, n := testu.GetRandomNode(t, dserv, 50000, rawLeaves)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -117,8 +125,11 @@ func TestDagModifierBasic(t *testing.T) {
 }
 
 func TestMultiWrite(t *testing.T) {
+	runBothSubtests(t, testMultiWrite)
+}
+func testMultiWrite(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -170,8 +181,11 @@ func TestMultiWrite(t *testing.T) {
 }
 
 func TestMultiWriteAndFlush(t *testing.T) {
+	runBothSubtests(t, testMultiWriteAndFlush)
+}
+func testMultiWriteAndFlush(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -218,8 +232,11 @@ func TestMultiWriteAndFlush(t *testing.T) {
 }
 
 func TestWriteNewFile(t *testing.T) {
+	runBothSubtests(t, testWriteNewFile)
+}
+func testWriteNewFile(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -261,8 +278,11 @@ func TestWriteNewFile(t *testing.T) {
 }
 
 func TestMultiWriteCoal(t *testing.T) {
+	runBothSubtests(t, testMultiWriteCoal)
+}
+func testMultiWriteCoal(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -307,8 +327,11 @@ func TestMultiWriteCoal(t *testing.T) {
 }
 
 func TestLargeWriteChunks(t *testing.T) {
+	runBothSubtests(t, testLargeWriteChunks)
+}
+func testLargeWriteChunks(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -346,8 +369,11 @@ func TestLargeWriteChunks(t *testing.T) {
 }
 
 func TestDagTruncate(t *testing.T) {
+	runBothSubtests(t, testDagTruncate)
+}
+func testDagTruncate(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
-	b, n := testu.GetRandomNode(t, dserv, 50000, testu.ProtoBufLeaves)
+	b, n := testu.GetRandomNode(t, dserv, 50000, rawLeaves)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -413,8 +439,11 @@ func TestDagTruncate(t *testing.T) {
 }
 
 func TestSparseWrite(t *testing.T) {
+	runBothSubtests(t, testSparseWrite)
+}
+func testSparseWrite(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -451,8 +480,11 @@ func TestSparseWrite(t *testing.T) {
 }
 
 func TestSeekPastEndWrite(t *testing.T) {
+	runBothSubtests(t, testSeekPastEndWrite)
+}
+func testSeekPastEndWrite(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -498,8 +530,11 @@ func TestSeekPastEndWrite(t *testing.T) {
 }
 
 func TestRelativeSeek(t *testing.T) {
+	runBothSubtests(t, testRelativeSeek)
+}
+func testRelativeSeek(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -528,8 +563,11 @@ func TestRelativeSeek(t *testing.T) {
 }
 
 func TestInvalidSeek(t *testing.T) {
+	runBothSubtests(t, testInvalidSeek)
+}
+func testInvalidSeek(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -545,9 +583,12 @@ func TestInvalidSeek(t *testing.T) {
 }
 
 func TestEndSeek(t *testing.T) {
+	runBothSubtests(t, testEndSeek)
+}
+func testEndSeek(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
 
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -587,9 +628,12 @@ func TestEndSeek(t *testing.T) {
 }
 
 func TestReadAndSeek(t *testing.T) {
+	runBothSubtests(t, testReadAndSeek)
+}
+func testReadAndSeek(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
 
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -655,9 +699,12 @@ func TestReadAndSeek(t *testing.T) {
 }
 
 func TestCtxRead(t *testing.T) {
+	runBothSubtests(t, testCtxRead)
+}
+func testCtxRead(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	dserv := testu.GetDAGServ()
 
-	n := testu.GetEmptyNode(t, dserv, testu.ProtoBufLeaves)
+	n := testu.GetEmptyNode(t, dserv, rawLeaves)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
