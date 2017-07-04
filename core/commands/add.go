@@ -17,9 +17,9 @@ import (
 	mfs "github.com/ipfs/go-ipfs/mfs"
 	ft "github.com/ipfs/go-ipfs/unixfs"
 
-	"gx/ipfs/QmSQD19QRgjwSpPk3UYo6vFLGWJPbB1geccoxkeRfkbv53/go-ipfs-cmds"
 	"gx/ipfs/QmT7xnHPBQcMbgpcDJ81opQZzU4LfLCFv5U1B6YERMRsDj/go-ipfs-cmdkit"
 	"gx/ipfs/QmT7xnHPBQcMbgpcDJ81opQZzU4LfLCFv5U1B6YERMRsDj/go-ipfs-cmdkit/files"
+	"gx/ipfs/QmTTusm1yNSEC2s8CRVimDLb7aPefvDo9Pe8hLatTPRxr9/go-ipfs-cmds"
 	mh "gx/ipfs/QmVGtdTZdTFaLsaj2RwdVG8jcjNNcp1DE914DKZ2kHmXHw/go-multihash"
 	"gx/ipfs/QmeWjRodbcZFKe5tMN7poEx3izym6osrLSnTLf9UjJZBbs/pb"
 )

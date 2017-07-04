@@ -20,9 +20,9 @@ import (
 	fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
 	migrate "github.com/ipfs/go-ipfs/repo/fsrepo/migrations"
 
-	cmds "gx/ipfs/QmSQD19QRgjwSpPk3UYo6vFLGWJPbB1geccoxkeRfkbv53/go-ipfs-cmds"
 	mprome "gx/ipfs/QmSk46nSD78YiuNojYMS8NW6hSCjH95JajqqzzoychZgef/go-metrics-prometheus"
 	"gx/ipfs/QmT7xnHPBQcMbgpcDJ81opQZzU4LfLCFv5U1B6YERMRsDj/go-ipfs-cmdkit"
+	cmds "gx/ipfs/QmTTusm1yNSEC2s8CRVimDLb7aPefvDo9Pe8hLatTPRxr9/go-ipfs-cmds"
 	"gx/ipfs/QmX3QZ5jHEPidwUrymXV1iSCSUhdGxj15sm2gP4jKMef7B/client_golang/prometheus"
 	pstore "gx/ipfs/QmXZSd1qR5BxZkPyuwfT5jpqQFScZccoZvDneXsKzCNHWX/go-libp2p-peerstore"
 	iconn "gx/ipfs/QmcXRdAP5bCCm51X7XfDUrQ8Q9PsrKbU75pyvB18iuKob5/go-libp2p-interface-conn"

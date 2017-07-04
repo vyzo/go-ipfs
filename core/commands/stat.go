@@ -191,13 +191,13 @@ Example:
 			if !polling {
 				printStats(out, bs)
 			} else {
-				fmt.Fprintln(out, "Total Up    Total Down  Rate Up     Rate Down\n")
+				fmt.Fprintln(out, "Total Up    Total Down  Rate Up     Rate Down")
 				// In the worst case scenario, the humanized output is of form "xxx.x xB", which is 8 characters long
 				fmt.Fprintf(out, "%8s    ", humanize.Bytes(uint64(bs.TotalOut)))
 				fmt.Fprintf(out, "%8s    ", humanize.Bytes(uint64(bs.TotalIn)))
 				fmt.Fprintf(out, "%8s/s  ", humanize.Bytes(uint64(bs.RateOut)))
 				fmt.Fprintf(out, "%8s/s  ", humanize.Bytes(uint64(bs.RateIn)))
-				fmt.Fprint(out, "\r")
+				fmt.Fprint(out, "\n")
 			}
 			return out, nil
 		},
