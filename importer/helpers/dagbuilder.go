@@ -165,6 +165,7 @@ func (db *DagBuilderHelper) GetNextDataNode() (*UnixfsNode, error) {
 	}
 
 	if db.rawLeaves {
+		println("raw block")
 		if db.prefix == nil {
 			return &UnixfsNode{
 				rawnode: dag.NewRawNode(data),
@@ -181,6 +182,7 @@ func (db *DagBuilderHelper) GetNextDataNode() (*UnixfsNode, error) {
 			}, nil
 		}
 	} else {
+		println("unixfs block")
 		blk := db.newUnixfsBlock()
 		blk.SetData(data)
 		return blk, nil

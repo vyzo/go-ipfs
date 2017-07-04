@@ -257,10 +257,6 @@ func verifyTDagRec(n node.Node, depth int, p VerifyParams) error {
 		// zero depth dag is raw data block
 		switch nd := n.(type) {
 		case *dag.ProtoNode:
-			if p.RawLeaves {
-				return errors.New("expected raw leaf")
-			}
-
 			pbn, err := ft.FromBytes(nd.Data())
 			if err != nil {
 				return err
@@ -269,11 +265,17 @@ func verifyTDagRec(n node.Node, depth int, p VerifyParams) error {
 			if pbn.GetType() != ft.TRaw {
 				return errors.New("Expected raw block")
 			}
+
+			if p.RawLeaves {
+				return errors.New("expected raw leaf, got a protobuf node")
+			}
+
 			return nil
 		case *dag.RawNode:
 			if !p.RawLeaves {
 				return errors.New("expected protobuf node as leaf")
 			}
+
 			return nil
 		default:
 			return errors.New("expected ProtoNode or RawNode")

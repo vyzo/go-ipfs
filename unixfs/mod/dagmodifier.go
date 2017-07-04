@@ -40,7 +40,7 @@ type DagModifier struct {
 	curWrOff   uint64
 	wrBuf      *bytes.Buffer
 
-	rawLeaves bool
+	RawLeaves bool
 
 	read uio.DagReader
 }
@@ -51,8 +51,10 @@ func NewDagModifier(ctx context.Context, from node.Node, serv mdag.DAGService, s
 	rawLeaves := false
 	switch from.(type) {
 	case *mdag.ProtoNode:
+		println("protonode dag modifier")
 		// ok
 	case *mdag.RawNode:
+		println("rawnode dag modifier")
 		rawLeaves = true
 	default:
 		return nil, ErrNotUnixfs
@@ -63,7 +65,7 @@ func NewDagModifier(ctx context.Context, from node.Node, serv mdag.DAGService, s
 		dagserv:   serv,
 		splitter:  spl,
 		ctx:       ctx,
-		rawLeaves: rawLeaves,
+		RawLeaves: rawLeaves,
 	}, nil
 }
 
@@ -340,7 +342,7 @@ func (dm *DagModifier) appendData(nd node.Node, spl chunk.Splitter) (node.Node, 
 		dbp := &help.DagBuilderParams{
 			Dagserv:   dm.dagserv,
 			Maxlinks:  help.DefaultLinksPerBlock,
-			RawLeaves: dm.rawLeaves,
+			RawLeaves: dm.RawLeaves,
 		}
 		return trickle.TrickleAppend(dm.ctx, nd, dbp.New(spl))
 	default:

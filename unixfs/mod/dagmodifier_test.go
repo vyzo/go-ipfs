@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"encoding/hex"
+
 	h "github.com/ipfs/go-ipfs/importer/helpers"
 	trickle "github.com/ipfs/go-ipfs/importer/trickle"
 
@@ -47,7 +49,7 @@ func testModWrite(t *testing.T, beg, size uint64, orig []byte, dm *DagModifier, 
 		RawLeaves:   bool(rawLeaves),
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
 	rd, err := uio.NewDagReader(context.Background(), nd, dm.dagserv)
@@ -62,7 +64,11 @@ func testModWrite(t *testing.T, beg, size uint64, orig []byte, dm *DagModifier, 
 
 	err = testu.ArrComp(after, orig)
 	if err != nil {
-		t.Fatal(err)
+		println("... orig ...")
+		println(hex.Dump(orig[:100]))
+		println("... after ...")
+		println(hex.Dump(after[:100]))
+		t.Error(err)
 	}
 	return orig
 }
@@ -85,6 +91,7 @@ func testDagModifierBasic(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	// Within zero block
 	beg := uint64(15)
@@ -143,6 +150,7 @@ func testMultiWrite(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	data := make([]byte, 4000)
 	u.NewTimeSeededRand().Read(data)
@@ -199,6 +207,7 @@ func testMultiWriteAndFlush(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	data := make([]byte, 20)
 	u.NewTimeSeededRand().Read(data)
@@ -250,6 +259,7 @@ func testWriteNewFile(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	towrite := make([]byte, 2000)
 	u.NewTimeSeededRand().Read(towrite)
@@ -296,6 +306,7 @@ func testMultiWriteCoal(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	data := make([]byte, 1000)
 	u.NewTimeSeededRand().Read(data)
@@ -320,6 +331,8 @@ func testMultiWriteCoal(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
+
 	rbuf, err := ioutil.ReadAll(read)
 	if err != nil {
 		t.Fatal(err)
@@ -345,6 +358,7 @@ func testLargeWriteChunks(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	wrsize := 1000
 	datasize := 10000000
@@ -386,6 +400,7 @@ func testDagTruncate(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	err = dagmod.Truncate(12345)
 	if err != nil {
@@ -456,6 +471,7 @@ func testSparseWrite(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	buf := make([]byte, 5000)
 	u.NewTimeSeededRand().Read(buf[2500:])
@@ -497,6 +513,7 @@ func testSeekPastEndWrite(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	buf := make([]byte, 5000)
 	u.NewTimeSeededRand().Read(buf[2500:])
@@ -547,6 +564,7 @@ func testRelativeSeek(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	for i := 0; i < 64; i++ {
 		dagmod.Write([]byte{byte(i)})
@@ -580,6 +598,8 @@ func testInvalidSeek(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
+
 	_, err = dagmod.Seek(10, -10)
 
 	if err != ErrUnrecognizedWhence {
@@ -601,6 +621,7 @@ func testEndSeek(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	_, err = dagmod.Write(make([]byte, 100))
 	if err != nil {
@@ -646,6 +667,7 @@ func testReadAndSeek(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	writeBuf := []byte{0, 1, 2, 3, 4, 5, 6, 7}
 	dagmod.Write(writeBuf)
@@ -717,6 +739,7 @@ func testCtxRead(t *testing.T, rawLeaves testu.UseRawLeaves) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dagmod.RawLeaves = bool(rawLeaves)
 
 	_, err = dagmod.Write([]byte{0, 1, 2, 3, 4, 5, 6, 7})
 	if err != nil {

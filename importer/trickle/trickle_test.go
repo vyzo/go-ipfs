@@ -35,7 +35,10 @@ func buildTestDag(ds merkledag.DAGService, spl chunk.Splitter) (*merkledag.Proto
 		return nil, merkledag.ErrNotProtobuf
 	}
 
-	return pbnd, VerifyTrickleDagStructure(pbnd, ds, dbp.Maxlinks, layerRepeat)
+	return pbnd, VerifyTrickleDagStructure(pbnd, VerifyParams{
+		Getter:      ds,
+		Direct:      dbp.Maxlinks,
+		LayerRepeat: layerRepeat})
 }
 
 //Test where calls to read are smaller than the chunk size
@@ -444,7 +447,10 @@ func TestAppend(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = VerifyTrickleDagStructure(nnode, ds, dbp.Maxlinks, layerRepeat)
+	err = VerifyTrickleDagStructure(nnode, VerifyParams{
+		Getter:      ds,
+		Direct:      dbp.Maxlinks,
+		LayerRepeat: layerRepeat})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -495,7 +501,10 @@ func TestMultipleAppends(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = VerifyTrickleDagStructure(nnode, ds, dbp.Maxlinks, layerRepeat)
+		err = VerifyTrickleDagStructure(nnode, VerifyParams{
+			Getter:      ds,
+			Direct:      dbp.Maxlinks,
+			LayerRepeat: layerRepeat})
 		if err != nil {
 			t.Fatal(err)
 		}
